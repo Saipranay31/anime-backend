@@ -2,9 +2,14 @@
 FROM eclipse-temurin:24-jdk AS build
 WORKDIR /app
 
-# Copy Maven wrapper & pom.xml first (cache dependencies)
+# Copy Maven wrapper & pom.xml first
 COPY pom.xml mvnw ./
 COPY .mvn .mvn
+
+# Make mvnw executable
+RUN chmod +x mvnw
+
+# Download dependencies
 RUN ./mvnw dependency:go-offline
 
 # Copy source code and build the JAR
@@ -15,11 +20,7 @@ RUN ./mvnw clean package -DskipTests
 FROM eclipse-temurin:24-jre
 WORKDIR /app
 
-# Copy the JAR from the build stage
 COPY --from=build /app/target/catalog-0.0.1-SNAPSHOT.jar app.jar
 
-# Expose the default Spring Boot port
 EXPOSE 8080
-
-# Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
